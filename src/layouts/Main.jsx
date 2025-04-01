@@ -1,5 +1,4 @@
 import { Outlet, useLoaderData } from "react-router-dom";
-import wave from "../assets/wave.svg";
 import Nav from "../components/Nav";
 import { fetchData } from "../helpers"
 
@@ -17,7 +16,6 @@ const Main = () => {
       <main>
         <Outlet />
       </main>
-      <img src={wave} alt="" />
     </div>
   )
 }

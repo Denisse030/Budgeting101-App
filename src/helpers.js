@@ -1,91 +1,91 @@
-export const waait = () => new Promise(res => setTimeout(res, Math.random() * 800))
+export const waait = () => new Promise(res => setTimeout(res, Math.random() * 800));
+
+// Get current active user
+const getUser = () => JSON.parse(localStorage.getItem("activeUser"));
 
 // colors
-const generateRandomColor = () => {
-  const existingBudgetLength = fetchData("budgets")?.length ?? 0;
-  return `${existingBudgetLength * 34} 65% 50%`
-}
+export const generateRandomColor = () => {
+  const hue = Math.floor(Math.random() * 360); // Random hue between 0 and 360
+  const saturation = 70; // Fixed saturation for pastel colors
+  const lightness = 85; // Fixed lightness for pastel colors
+  return `${hue} ${saturation}% ${lightness}%`; // HSL format
+};
 
 // Local storage
-export const fetchData = (key) => {
-  return JSON.parse(localStorage.getItem(key));
+export const fetchData = (key, user) => {
+  return JSON.parse(localStorage.getItem(`${key}-${user}`));
 };
 
-export const getAllMatchingItems = ({category, key, value}) => {
-  const data = fetchData(category) ?? [];
+export const saveData = (key, data, user) => {
+  return localStorage.setItem(`${key}-${user}`, JSON.stringify(data));
+};
+
+export const getAllMatchingItems = ({ category, key, value }) => {
+  const user = getUser();
+  const data = fetchData(category, user) ?? [];
   return data.filter((item) => item[key] === value);
 };
- 
-// delete item from local storage
-export const deleteItem = ({key, id} ) =>
-{
-  const existingData = fetchData(key);
-  if(id) {
+
+// Delete item from localStorage
+export const deleteItem = ({ key, id }) => {
+  const user = getUser();
+  const existingData = fetchData(key, user);
+  if (id) {
     const newData = existingData.filter((item) => item.id !== id);
-    return localStorage.setItem(key, JSON.stringify(newData));
+    return saveData(key, newData, user);
   }
-  return localStorage.removeItem(key);
+  return localStorage.removeItem(`${key}-${user}`);
 };
 
-// create budget
-export const createBudget = ({
-  name, amount
-}) => {
+// Create budget
+export const createBudget = ({ name, amount }) => {
+  const user = getUser();
   const newItem = {
     id: crypto.randomUUID(),
-    name: name,
+    name,
     createdAt: Date.now(),
     amount: +amount,
-    color: generateRandomColor()
-  }
-  const existingBudgets = fetchData("budgets") ?? [];
-  return localStorage.setItem("budgets",
-    JSON.stringify([...existingBudgets, newItem]))
-}
-
-// create expense
-export const createExpense = ({ name, amount, budgetId }) => {
-  const newItem = {
-    id: crypto.randomUUID(),
-    name: name,
-    createdAt: Date.now(),
-    amount: +amount,
-    budgetId: budgetId,
+    color: generateRandomColor(),
   };
-  const existingExpenses = fetchData("expenses") ?? [];
-  return localStorage.setItem(
-    "expenses",
-    JSON.stringify([...existingExpenses, newItem])
-  );
+  const existingBudgets = fetchData("budgets", user) ?? [];
+  return saveData("budgets", [...existingBudgets, newItem], user);
 };
 
-// total spent by budget
+// Create expense
+export const createExpense = ({ name, amount, budgetId }) => {
+  const user = getUser();
+  const newItem = {
+    id: crypto.randomUUID(),
+    name,
+    createdAt: Date.now(),
+    amount: +amount,
+    budgetId,
+  };
+  const existingExpenses = fetchData("expenses", user) ?? [];
+  return saveData("expenses", [...existingExpenses, newItem], user);
+};
+
+// Total spent by budget
 export const calculateSpentByBudget = (budgetId) => {
-  const expenses = fetchData("expenses") ?? [];
-  const budgetSpent = expenses.reduce((acc, expense) => {
-    if (expense.budgetId !== budgetId) return acc
-    return acc += expense.amount
-  }, 0)
-  return budgetSpent;
-}
+  const user = getUser();
+  const expenses = fetchData("expenses", user) ?? [];
+  return expenses
+    .filter(expense => expense.budgetId === budgetId)
+    .reduce((acc, expense) => acc + expense.amount, 0);
+};
 
-
-//Formatting
+// Formatting
 export const formatDateToLocaleString = (epoch) =>
   new Date(epoch).toLocaleDateString();
 
-//Formating percentages
-export const formatPercentage = (amt) => {
-  return amt.toLocaleString(undefined, {
+export const formatPercentage = (amt) =>
+  amt.toLocaleString(undefined, {
     style: "percent",
     minimumFractionDigits: 0,
-  })
-}
+  });
 
-//Formatting Currency
-export const formatCurrency = (amt) => {
-  return amt.toLocaleString(undefined, {
+export const formatCurrency = (amt) =>
+  amt.toLocaleString(undefined, {
     style: "currency",
     currency: "USD",
-  })
-}
+  });
